@@ -1,11 +1,11 @@
 variable "vpn_psk" {
-  description = "The IPsec Pre-Shared Key"
+  description = "IPsec Pre-Shared Key (https://cloud.google.com/network-connectivity/docs/vpn/how-to/generating-pre-shared-key)"
   type        = string
   sensitive   = true
 }
 
 variable "admin_password" {
-  description = "SoftEther VPN admin / database master password"
+  description = "SoftEther VPN admin password"
   type        = string
   sensitive   = true
 }
