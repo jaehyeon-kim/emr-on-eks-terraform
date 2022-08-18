@@ -28,7 +28,9 @@ locals {
   }
 
   vpc = {
-    class_b = "100" # Class B of VPC (10.XXX.0.0/16)
+    cidr = "10.0.0.0/16"
+    azs  = slice(data.aws_availability_zones.available.names, 0, 3)
+
   }
 
   vpn = {
@@ -41,7 +43,7 @@ locals {
   }
 
   data_bucket = {
-    bucket_name = "${local.name}-data-${data.aws_caller_identity.current.account_id}-${local.region}"
+    name = "${local.name}-data-${data.aws_caller_identity.current.account_id}-${local.region}"
   }
 
   tags = {
