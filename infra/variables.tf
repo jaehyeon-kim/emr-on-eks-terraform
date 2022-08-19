@@ -2,16 +2,18 @@ variable "vpn_psk" {
   description = "IPsec Pre-Shared Key (https://cloud.google.com/network-connectivity/docs/vpn/how-to/generating-pre-shared-key)"
   type        = string
   sensitive   = true
+  default     = null # shouldn't be null if local.flag.vpn.to_create = true
 }
 
 variable "admin_password" {
   description = "SoftEther VPN admin password"
   type        = string
   sensitive   = true
+  default     = null # shouldn't be null if local.flag.vpn.to_create = true
 }
 
 locals {
-  name        = basename(path.cwd)
+  name        = basename(path.cwd) == "infra" ? basename(dirname(path.cwd)) : basename(path.cwd)
   region      = data.aws_region.current.name
   environment = "dev"
 
