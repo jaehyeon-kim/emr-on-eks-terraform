@@ -62,3 +62,19 @@ output "data_bucket_name" {
     for k, v in aws_s3_bucket.data_bucket : k => v.id
   }
 }
+
+# EKS
+output "configure_kubectl" {
+  description = "Configure kubectl: make sure you're logged in with the correct AWS profile and run the following command to update your kubeconfig"
+  value       = module.eks_blueprints.configure_kubectl
+}
+
+output "platform_team" {
+  description = "Role Arn of platform-team"
+  value       = module.eks_blueprints.teams[*].platform_teams_iam_role_arn["admin"]
+}
+
+output "analytics" {
+  description = "Role Arn of analytics team"
+  value       = module.eks_blueprints.teams[*].application_teams_iam_role_arn["analytics"]
+}

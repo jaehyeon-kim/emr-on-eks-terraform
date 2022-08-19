@@ -11,9 +11,10 @@ variable "admin_password" {
 }
 
 locals {
-  name             = basename(path.cwd)
-  region           = data.aws_region.current.name
-  environment      = "dev"
+  name        = basename(path.cwd)
+  region      = data.aws_region.current.name
+  environment = "dev"
+
   local_ip_address = "${chomp(data.http.local_ip_address.response_body)}/32"
 
   flag = {
@@ -23,14 +24,13 @@ locals {
       to_use_spot      = false
     }
     data_bucket = {
-      to_create = false
+      to_create = true
     }
   }
 
   vpc = {
     cidr = "10.0.0.0/16"
     azs  = slice(data.aws_availability_zones.available.names, 0, 3)
-
   }
 
   vpn = {
@@ -44,6 +44,11 @@ locals {
 
   data_bucket = {
     name = "${local.name}-data-${data.aws_caller_identity.current.account_id}-${local.region}"
+  }
+
+  eks = {
+    cluster_version    = "1.23"
+    blueprints_version = "v4.7.0"
   }
 
   tags = {
