@@ -23,9 +23,6 @@ locals {
       to_limit_ingress = true
       to_use_spot      = false
     }
-    data_bucket = {
-      to_create = true
-    }
   }
 
   vpc = {
@@ -47,8 +44,7 @@ locals {
   }
 
   eks = {
-    cluster_version    = "1.23"
-    blueprints_version = "v4.7.0"
+    cluster_version = "1.23"
   }
 
   tags = {

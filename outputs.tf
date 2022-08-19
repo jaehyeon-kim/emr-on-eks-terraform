@@ -58,9 +58,7 @@ output "vpn_autoscaling_group_name" {
 # Data bucket
 output "data_bucket_name" {
   description = "Data bucket name"
-  value = {
-    for k, v in aws_s3_bucket.data_bucket : k => v.id
-  }
+  value       = aws_s3_bucket.data_bucket
 }
 
 # EKS

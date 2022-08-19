@@ -1,5 +1,5 @@
 module "eks_blueprints" {
-  source = "github.com/aws-ia/terraform-aws-eks-blueprints?ref=${local.eks.blueprints_version}"
+  source = "github.com/aws-ia/terraform-aws-eks-blueprints?ref=v4.7.0"
 
   cluster_name    = local.name
   cluster_version = local.eks.cluster_version
@@ -60,7 +60,7 @@ module "eks_blueprints" {
 }
 
 module "eks_blueprints_kubernetes_addons" {
-  source = "github.com/aws-ia/terraform-aws-eks-blueprints//modules/kubernetes-addons?ref=${local.eks.blueprints_version}"
+  source = "github.com/aws-ia/terraform-aws-eks-blueprints//modules/kubernetes-addons?ref=v4.7.0"
 
   eks_cluster_id       = module.eks_blueprints.eks_cluster_id
   eks_cluster_endpoint = module.eks_blueprints.eks_cluster_endpoint
@@ -98,7 +98,7 @@ resource "aws_emrcontainers_virtual_cluster" "analytics_team" {
 
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
-  version = "~> 3.0"
+  version = "~> 3.14"
 
   name = "${local.name}-vpc"
   cidr = local.vpc.cidr

@@ -24,3 +24,8 @@ data "aws_ami" "amazon_linux_2" {
     values = ["amzn2-ami-hvm-*-x86_64-ebs"]
   }
 }
+
+# ESK cluster authentication token
+data "aws_eks_cluster_auth" "this" {
+  name = module.eks_blueprints.eks_cluster_id
+}

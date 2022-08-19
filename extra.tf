@@ -191,24 +191,18 @@ resource "local_sensitive_file" "pem_file" {
 }
 
 resource "aws_s3_bucket" "data_bucket" {
-  count = local.flag.data_bucket.to_create ? 1 : 0
-
   bucket = local.data_bucket.name
 
   tags = local.tags
 }
 
 resource "aws_s3_bucket_acl" "data_bucket" {
-  count = local.flag.data_bucket.to_create ? 1 : 0
-
-  bucket = aws_s3_bucket.data_bucket[0].id
+  bucket = aws_s3_bucket.data_bucket.id
   acl    = "private"
 }
 
 resource "aws_s3_bucket_server_side_encryption_configuration" "data_bucket" {
-  count = local.flag.data_bucket.to_create ? 1 : 0
-
-  bucket = aws_s3_bucket.data_bucket[0].bucket
+  bucket = aws_s3_bucket.data_bucket.bucket
 
   rule {
     apply_server_side_encryption_by_default {
