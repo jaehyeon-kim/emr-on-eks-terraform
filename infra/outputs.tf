@@ -33,7 +33,7 @@ output "azs" {
   value       = module.vpc.azs
 }
 
-# AutoScaling
+# autoScaling
 output "vpn_launch_template_arn" {
   description = "The ARN of the VPN launch template"
   value = {
@@ -55,10 +55,10 @@ output "vpn_autoscaling_group_name" {
   }
 }
 
-# Data bucket
-output "data_bucket_name" {
-  description = "Data bucket name"
-  value       = aws_s3_bucket.data_bucket
+# data bucket
+output "data_bucket_arn" {
+  description = "Data bucket ARN"
+  value       = aws_s3_bucket.data_bucket.arn
 }
 
 # EKS
@@ -67,12 +67,22 @@ output "configure_kubectl" {
   value       = module.eks_blueprints.configure_kubectl
 }
 
-output "platform_team" {
-  description = "Role Arn of platform-team"
-  value       = module.eks_blueprints.teams[*].platform_teams_iam_role_arn["admin"]
+output "eks_cluster_arn" {
+  description = "Amazon EKS Cluster Name"
+  value       = module.eks_blueprints.eks_cluster_arn
 }
 
-output "analytics" {
-  description = "Role Arn of analytics team"
-  value       = module.eks_blueprints.teams[*].application_teams_iam_role_arn["analytics"]
+output "managed_node_groups" {
+  description = "Outputs from EKS Managed node groups"
+  value       = module.eks_blueprints.managed_node_groups
+}
+
+output "emrcontainers_virtual_cluster_id" {
+  description = "EMR Containers Virtual cluster ID"
+  value       = aws_emrcontainers_virtual_cluster.analytics.id
+}
+
+output "emr_on_eks_role_arn" {
+  description = "IAM execution role arn for EMR on EKS"
+  value       = module.eks_blueprints.emr_on_eks_role_arn
 }

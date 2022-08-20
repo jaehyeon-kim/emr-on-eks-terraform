@@ -8,10 +8,16 @@ module "eks_blueprints" {
   vpc_id                          = module.vpc.vpc_id
   private_subnet_ids              = module.vpc.private_subnets
   cluster_endpoint_private_access = true
-  cluster_endpoint_public_access  = false
+  # terraform fails without vpn connection if it is set to false
+  #   - apply with true when creating, then re-apply with false after vpn connection
+  #   - likewise apply with true before destroying, followed by destroying
+  cluster_endpoint_public_access = true
+
+  cluster_additional_security_group_ids = [aws_security_group.eks_vpn_access.id]
+  worker_additional_security_group_ids  = [aws_security_group.eks_vpn_access.id]
   node_security_group_additional_rules = {
     ingress_self_all = {
-      description = "Node to node all ports/protocols"
+      description = "Node to node all ports/protocols, recommended and required for Add-ons"
       protocol    = "-1"
       from_port   = 0
       to_port     = 0
@@ -19,7 +25,7 @@ module "eks_blueprints" {
       self        = true
     }
     egress_all = {
-      description      = "Node all egress"
+      description      = "Node all egress, recommended outbound traffic for Node groups"
       protocol         = "-1"
       from_port        = 0
       to_port          = 0
@@ -28,7 +34,7 @@ module "eks_blueprints" {
       ipv6_cidr_blocks = ["::/0"]
     }
     ingress_cluster_to_node_all_traffic = {
-      description                   = "Cluster API to Nodegroup all traffic"
+      description                   = "Cluster API to Nodegroup all traffic, can be restricted further eg, metrics-server 4443, spark-operator 8080, karpenter 8443 ..."
       protocol                      = "-1"
       from_port                     = 0
       to_port                       = 0
@@ -37,21 +43,32 @@ module "eks_blueprints" {
     }
   }
 
+  # Add karpenter.sh/discovery tag so that we can use this as securityGroupSelector in karpenter provisioner
+  node_security_group_tags = {
+    "karpenter.sh/discovery/${local.name}" = local.name
+  }
+
   # EKS manage node groups
   managed_node_groups = {
     ondemand = {
       node_group_name = "managed-ondemand"
       instance_types  = ["m5.large"]
       subnet_ids      = module.vpc.private_subnets
-      capacity_type   = "ON_DEMAND" # ON_DEMAND or SPOT
+      max_size        = 10
+      min_size        = 1
+      desired_size    = 1
+      update_config = [{
+        max_unavailable_percentage = 30
+      }]
     }
   }
 
+  # EMR on EKS
   enable_emr_on_eks = true
   emr_on_eks_teams = {
     analytics = {
       namespace               = "analytics"
-      job_execution_role      = "${local.name}-analytics-emr-eks-job-execution-role"
+      job_execution_role      = "analytics-job-execution-role"
       additional_iam_policies = [aws_iam_policy.emr_on_eks.arn]
     }
   }
@@ -59,30 +76,28 @@ module "eks_blueprints" {
   tags = local.tags
 }
 
-module "eks_blueprints_kubernetes_addons" {
-  source = "github.com/aws-ia/terraform-aws-eks-blueprints//modules/kubernetes-addons?ref=v4.7.0"
+resource "aws_security_group" "eks_vpn_access" {
+  name   = "${local.name}-eks-vpn-access"
+  vpc_id = module.vpc.vpc_id
 
-  eks_cluster_id       = module.eks_blueprints.eks_cluster_id
-  eks_cluster_endpoint = module.eks_blueprints.eks_cluster_endpoint
-  eks_oidc_provider    = module.eks_blueprints.oidc_provider
-  eks_cluster_version  = module.eks_blueprints.eks_cluster_version
-
-  # Amazon EKS Add-ons
-  enable_amazon_eks_vpc_cni    = true
-  enable_amazon_eks_coredns    = true
-  enable_amazon_eks_kube_proxy = true
-
-  # Other Kubernetes Add-ons
-  enable_coredns_autoscaler = true
-  enable_metrics_server     = true
-  enable_cluster_autoscaler = true
-  enable_karpenter          = true
-
-  tags = local.tags
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
-resource "aws_emrcontainers_virtual_cluster" "analytics_team" {
-  name = "${module.eks_blueprints.eks_cluster_id}-analytics-team"
+resource "aws_security_group_rule" "eks_vpn_inbound" {
+  count                    = local.flag.vpn.to_create ? 1 : 0
+  type                     = "ingress"
+  description              = "VPN access"
+  security_group_id        = aws_security_group.eks_vpn_access.id
+  protocol                 = "-1"
+  from_port                = 0
+  to_port                  = 0
+  source_security_group_id = aws_security_group.vpn[0].id
+}
+
+resource "aws_emrcontainers_virtual_cluster" "analytics" {
+  name = "${module.eks_blueprints.eks_cluster_id}-analytics"
 
   container_provider {
     id   = module.eks_blueprints.eks_cluster_id
@@ -94,6 +109,37 @@ resource "aws_emrcontainers_virtual_cluster" "analytics_team" {
       }
     }
   }
+}
+
+module "eks_blueprints_kubernetes_addons" {
+  source = "github.com/aws-ia/terraform-aws-eks-blueprints//modules/kubernetes-addons?ref=v4.7.0"
+
+  eks_cluster_id       = module.eks_blueprints.eks_cluster_id
+  eks_cluster_endpoint = module.eks_blueprints.eks_cluster_endpoint
+  eks_oidc_provider    = module.eks_blueprints.oidc_provider
+  eks_cluster_version  = module.eks_blueprints.eks_cluster_version
+
+  enable_karpenter                    = true
+  enable_aws_node_termination_handler = true
+
+  tags = local.tags
+}
+
+# deploy spark provisioners for Karpenter autoscaler
+data "kubectl_path_documents" "karpenter_provisioners" {
+  pattern = "${path.module}/provisioners/spark*.yaml"
+  vars = {
+    iam-instance-profile-id = "${local.name}-managed-ondemand"
+    cluster_name            = local.name
+    eks-vpc_name            = "${local.name}-vpc"
+  }
+}
+
+resource "kubectl_manifest" "karpenter_provisioner" {
+  for_each  = toset(data.kubectl_path_documents.karpenter_provisioners.documents)
+  yaml_body = each.value
+
+  depends_on = [module.eks_blueprints_kubernetes_addons]
 }
 
 module "vpc" {
@@ -126,7 +172,7 @@ module "vpc" {
 }
 
 resource "aws_iam_policy" "emr_on_eks" {
-  name = "${local.name}-analytics-emr-eks-job-execution-policy"
+  name = "analytics-job-execution-policy"
 
   policy = jsonencode({
     Version = "2012-10-17"

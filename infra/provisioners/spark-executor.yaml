@@ -1,0 +1,31 @@
+apiVersion: karpenter.sh/v1alpha5
+kind: Provisioner
+metadata:
+  name: spark-executor
+spec:
+  labels:
+    type: karpenter
+    provisioner: spark-executor
+  ttlSecondsAfterEmpty: 120
+  requirements:
+    - key: "topology.kubernetes.io/zone"
+      operator: In
+      values: ["ap-southeast-2a"]
+    - key: "kubernetes.io/arch"
+      operator: In
+      values: ["arm64"]
+    - key: "karpenter.sh/capacity-type"
+      operator: In
+      values: ["spot"]
+    - key: "node.kubernetes.io/instance-type"
+      operator: In
+      values: ["m5.large", "m5.xlarge"]
+  limits:
+    resources:
+      cpu: "1000"
+      memory: 1000Gi
+  provider:
+    subnetSelector:
+      Name: "${eks-vpc_name}-private*"
+    securityGroupSelector:
+      karpenter.sh/discovery/${cluster_name}: "${cluster_name}"

@@ -46,7 +46,7 @@ locals {
   }
 
   eks = {
-    cluster_version = "1.23"
+    cluster_version = "1.22"
   }
 
   tags = {
