@@ -29,3 +29,14 @@ data "aws_ami" "amazon_linux_2" {
 data "aws_eks_cluster_auth" "this" {
   name = module.eks_blueprints.eks_cluster_id
 }
+
+# Latest Amazon linux AMI for EKS launch template
+data "aws_ami" "eks" {
+  owners      = ["amazon"]
+  most_recent = true
+
+  filter {
+    name   = "name"
+    values = ["amazon-eks-node-${module.eks_blueprints.eks_cluster_version}-*"]
+  }
+}

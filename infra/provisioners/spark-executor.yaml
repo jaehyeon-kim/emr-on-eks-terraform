@@ -6,11 +6,11 @@ spec:
   labels:
     type: karpenter
     provisioner: spark-executor
-  ttlSecondsAfterEmpty: 120
+  ttlSecondsAfterEmpty: 30
   requirements:
     - key: "topology.kubernetes.io/zone"
       operator: In
-      values: ["ap-southeast-2a"]
+      values: [${az}]
     - key: "kubernetes.io/arch"
       operator: In
       values: ["arm64"]
@@ -25,7 +25,6 @@ spec:
       cpu: "1000"
       memory: 1000Gi
   provider:
+    launchTemplate: "karpenter-${cluster_name}"
     subnetSelector:
-      Name: "${eks-vpc_name}-private*"
-    securityGroupSelector:
-      karpenter.sh/discovery/${cluster_name}: "${cluster_name}"
+      Name: "${vpc_name}-private*"

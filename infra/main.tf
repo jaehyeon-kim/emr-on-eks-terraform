@@ -54,7 +54,7 @@ module "eks_blueprints" {
       node_group_name = "managed-ondemand"
       instance_types  = ["m5.large"]
       subnet_ids      = module.vpc.private_subnets
-      max_size        = 10
+      max_size        = 1
       min_size        = 1
       desired_size    = 1
       update_config = [{
@@ -125,13 +125,37 @@ module "eks_blueprints_kubernetes_addons" {
   tags = local.tags
 }
 
+module "karpenter_launch_templates" {
+  source = "github.com/aws-ia/terraform-aws-eks-blueprints//modules/launch-templates?ref=v4.7.0"
+
+  eks_cluster_id = module.eks_blueprints.eks_cluster_id
+
+  launch_template_config = {
+    linux = {
+      ami                    = data.aws_ami.eks.id
+      launch_template_prefix = "karpenter"
+      iam_instance_profile   = module.eks_blueprints.managed_node_group_iam_instance_profile_id[0]
+      vpc_security_group_ids = [module.eks_blueprints.worker_node_security_group_id, aws_security_group.eks_vpn_access.id]
+      block_device_mappings = [
+        {
+          device_name = "/dev/xvda"
+          volume_type = "gp3"
+          volume_size = 80
+        }
+      ]
+    }
+  }
+
+  tags = merge(local.tags, { Name = "karpenter" })
+}
+
 # deploy spark provisioners for Karpenter autoscaler
 data "kubectl_path_documents" "karpenter_provisioners" {
   pattern = "${path.module}/provisioners/spark*.yaml"
   vars = {
-    iam-instance-profile-id = "${local.name}-managed-ondemand"
-    cluster_name            = local.name
-    eks-vpc_name            = "${local.name}-vpc"
+    az           = join(",", slice(local.vpc.azs, 0, 1))
+    cluster_name = local.name
+    vpc_name     = "${local.name}-vpc"
   }
 }
 
