@@ -56,9 +56,9 @@ output "vpn_autoscaling_group_name" {
 }
 
 # data bucket
-output "data_bucket_arn" {
-  description = "Data bucket ARN"
-  value       = aws_s3_bucket.data_bucket.arn
+output "data_bucket_name" {
+  description = "Data bucket name"
+  value       = aws_s3_bucket.data_bucket.id
 }
 
 # EKS
