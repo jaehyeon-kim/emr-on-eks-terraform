@@ -5,16 +5,12 @@ module "eks_blueprints" {
   cluster_version = local.eks.cluster_version
 
   # EKS network config
-  vpc_id                          = module.vpc.vpc_id
-  private_subnet_ids              = module.vpc.private_subnets
-  cluster_endpoint_private_access = true
-  # terraform fails without vpn connection if it is set to false
-  #   - apply with true when creating, then re-apply with false after vpn connection
-  #   - likewise apply with true before destroying, followed by destroying
-  cluster_endpoint_public_access = true
+  vpc_id             = module.vpc.vpc_id
+  private_subnet_ids = module.vpc.private_subnets
 
-  cluster_additional_security_group_ids = [aws_security_group.eks_vpn_access.id]
-  worker_additional_security_group_ids  = [aws_security_group.eks_vpn_access.id]
+  cluster_endpoint_private_access = true
+  cluster_endpoint_public_access  = true
+
   node_security_group_additional_rules = {
     ingress_self_all = {
       description = "Node to node all ports/protocols, recommended and required for Add-ons"
@@ -43,20 +39,17 @@ module "eks_blueprints" {
     }
   }
 
-  # Add karpenter.sh/discovery tag so that we can use this as securityGroupSelector in karpenter provisioner
-  node_security_group_tags = {
-    "karpenter.sh/discovery/${local.name}" = local.name
-  }
-
   # EKS manage node groups
   managed_node_groups = {
     ondemand = {
-      node_group_name = "managed-ondemand"
-      instance_types  = ["m5.large"]
-      subnet_ids      = module.vpc.private_subnets
-      max_size        = 1
-      min_size        = 1
-      desired_size    = 1
+      node_group_name        = "managed-ondemand"
+      instance_types         = ["m5.xlarge"]
+      subnet_ids             = module.vpc.private_subnets
+      max_size               = 5
+      min_size               = 1
+      desired_size           = 1
+      create_launch_template = true
+      launch_template_os     = "amazonlinux2eks"
       update_config = [{
         max_unavailable_percentage = 30
       }]
@@ -74,26 +67,6 @@ module "eks_blueprints" {
   }
 
   tags = local.tags
-}
-
-resource "aws_security_group" "eks_vpn_access" {
-  name   = "${local.name}-eks-vpn-access"
-  vpc_id = module.vpc.vpc_id
-
-  lifecycle {
-    create_before_destroy = true
-  }
-}
-
-resource "aws_security_group_rule" "eks_vpn_inbound" {
-  count                    = local.flag.vpn.to_create ? 1 : 0
-  type                     = "ingress"
-  description              = "VPN access"
-  security_group_id        = aws_security_group.eks_vpn_access.id
-  protocol                 = "-1"
-  from_port                = 0
-  to_port                  = 0
-  source_security_group_id = aws_security_group.vpn[0].id
 }
 
 resource "aws_emrcontainers_virtual_cluster" "analytics" {
@@ -119,13 +92,15 @@ module "eks_blueprints_kubernetes_addons" {
   eks_oidc_provider    = module.eks_blueprints.oidc_provider
   eks_cluster_version  = module.eks_blueprints.eks_cluster_version
 
-  #---------------------------------------
-  # Amazon EKS Managed Add-ons
-  #---------------------------------------
+  # EKS Addons
   enable_amazon_eks_vpc_cni    = true
   enable_amazon_eks_coredns    = true
   enable_amazon_eks_kube_proxy = true
 
+  # K8s Addons
+  enable_coredns_autoscaler           = true
+  enable_metrics_server               = true
+  enable_cluster_autoscaler           = true
   enable_karpenter                    = true
   enable_aws_node_termination_handler = true
 
@@ -142,12 +117,12 @@ module "karpenter_launch_templates" {
       ami                    = data.aws_ami.eks.id
       launch_template_prefix = "karpenter"
       iam_instance_profile   = module.eks_blueprints.managed_node_group_iam_instance_profile_id[0]
-      vpc_security_group_ids = [module.eks_blueprints.worker_node_security_group_id, aws_security_group.eks_vpn_access.id]
+      vpc_security_group_ids = [module.eks_blueprints.worker_node_security_group_id]
       block_device_mappings = [
         {
           device_name = "/dev/xvda"
           volume_type = "gp3"
-          volume_size = 80
+          volume_size = 100
         }
       ]
     }
@@ -191,13 +166,12 @@ module "vpc" {
   public_subnet_tags = {
     "kubernetes.io/cluster/${local.name}" = "shared"
     "kubernetes.io/role/elb"              = 1
-    "${local.name}-vpc-subnet-group"      = "public"
   }
 
   private_subnet_tags = {
     "kubernetes.io/cluster/${local.name}" = "shared"
     "kubernetes.io/role/internal-elb"     = 1
-    "${local.name}-vpc-subnet-group"      = "private"
+    "karpenter.sh/discovery"              = local.name
   }
 
   tags = local.tags
@@ -243,13 +217,22 @@ resource "aws_iam_policy" "emr_on_eks" {
 resource "aws_s3_bucket" "default_bucket" {
   bucket = local.default_bucket.name
 
-  acl           = "private"
   force_destroy = true
+
+  tags = local.tags
+}
+
+resource "aws_s3_bucket_acl" "default_bucket" {
+  bucket = aws_s3_bucket.default_bucket.id
+  acl    = "private"
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "default_bucket" {
+  bucket = aws_s3_bucket.default_bucket.bucket
+
   rule {
     apply_server_side_encryption_by_default {
       sse_algorithm = "AES256"
     }
   }
-
-  tags = local.tags
 }

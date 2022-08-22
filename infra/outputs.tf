@@ -33,28 +33,6 @@ output "azs" {
   value       = module.vpc.azs
 }
 
-# autoScaling
-output "vpn_launch_template_arn" {
-  description = "The ARN of the VPN launch template"
-  value = {
-    for k, v in module.vpn : k => v.launch_template_arn
-  }
-}
-
-output "vpn_autoscaling_group_id" {
-  description = "VPN autoscaling group id"
-  value = {
-    for k, v in module.vpn : k => v.autoscaling_group_id
-  }
-}
-
-output "vpn_autoscaling_group_name" {
-  description = "VPN autoscaling group name"
-  value = {
-    for k, v in module.vpn : k => v.autoscaling_group_name
-  }
-}
-
 # default bucket
 output "default_bucket_name" {
   description = "Data bucket name"
