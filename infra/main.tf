@@ -219,8 +219,8 @@ resource "aws_iam_policy" "emr_on_eks" {
           "s3:PutObject",
         ]
         Resource = [
-          aws_s3_bucket.data_bucket.arn,
-          "${aws_s3_bucket.data_bucket.arn}/*"
+          aws_s3_bucket.default_bucket.arn,
+          "${aws_s3_bucket.default_bucket.arn}/*"
         ]
       },
       {
@@ -240,23 +240,16 @@ resource "aws_iam_policy" "emr_on_eks" {
   })
 }
 
-resource "aws_s3_bucket" "data_bucket" {
-  bucket = local.data_bucket.name
+resource "aws_s3_bucket" "default_bucket" {
+  bucket = local.default_bucket.name
 
-  tags = local.tags
-}
-
-resource "aws_s3_bucket_acl" "data_bucket" {
-  bucket = aws_s3_bucket.data_bucket.id
-  acl    = "private"
-}
-
-resource "aws_s3_bucket_server_side_encryption_configuration" "data_bucket" {
-  bucket = aws_s3_bucket.data_bucket.bucket
-
+  acl           = "private"
+  force_destroy = true
   rule {
     apply_server_side_encryption_by_default {
       sse_algorithm = "AES256"
     }
   }
+
+  tags = local.tags
 }

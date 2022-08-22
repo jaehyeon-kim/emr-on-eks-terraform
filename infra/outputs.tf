@@ -55,10 +55,10 @@ output "vpn_autoscaling_group_name" {
   }
 }
 
-# data bucket
-output "data_bucket_name" {
+# default bucket
+output "default_bucket_name" {
   description = "Data bucket name"
-  value       = aws_s3_bucket.data_bucket.id
+  value       = aws_s3_bucket.default_bucket.id
 }
 
 # EKS

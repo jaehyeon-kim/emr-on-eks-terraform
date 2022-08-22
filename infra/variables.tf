@@ -41,8 +41,8 @@ locals {
     ]
   }
 
-  data_bucket = {
-    name = "${local.name}-data-${data.aws_caller_identity.current.account_id}-${local.region}"
+  default_bucket = {
+    name = "${local.name}-default-${data.aws_caller_identity.current.account_id}-${local.region}"
   }
 
   eks = {

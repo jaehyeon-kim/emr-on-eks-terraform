@@ -46,5 +46,5 @@ spec:
 EOF
 
 # sync to S3
-DATA_BUCKET_NAME=$(terraform -chdir=./infra output --raw data_bucket_name)
-aws s3 sync . s3://$DATA_BUCKET_NAME --exclude "*" --include "scripts/*" 
+DEFAULT_BUCKET_NAME=$(terraform -chdir=./infra output --raw default_bucket_name)
+aws s3 sync . s3://$DEFAULT_BUCKET_NAME --exclude "*" --include "scripts/*" 
