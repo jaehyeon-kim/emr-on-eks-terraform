@@ -24,4 +24,4 @@ spec:
   provider:
     launchTemplate: "karpenter-${cluster_name}"
     subnetSelector:
-      "${cluster_name}-vpc-subnet-group": "private"
+      karpenter.sh/discovery: ${cluster_name}
