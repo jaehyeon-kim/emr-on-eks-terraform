@@ -20,7 +20,12 @@ apiVersion: v1
 kind: Pod
 spec:
   nodeSelector:
-    karpenter.sh/capacity-type: on-demand
+    type: 'karpenter'
+    provisioner: 'spark-driver'
+  tolerations:
+    - key: 'spark-driver'
+      operator: 'Exists'
+      effect: 'NoSchedule'
   containers:
   - name: spark-kubernetes-driver
 EOF
@@ -30,7 +35,12 @@ apiVersion: v1
 kind: Pod
 spec:
   nodeSelector:
-    karpenter.sh/capacity-type: spot
+    type: 'karpenter'
+    provisioner: 'spark-executor'
+  tolerations:
+    - key: 'spark-executor'
+      operator: 'Exists'
+      effect: 'NoSchedule'
   containers:
   - name: spark-kubernetes-executor
 EOF

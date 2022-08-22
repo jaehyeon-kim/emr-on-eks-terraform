@@ -119,6 +119,13 @@ module "eks_blueprints_kubernetes_addons" {
   eks_oidc_provider    = module.eks_blueprints.oidc_provider
   eks_cluster_version  = module.eks_blueprints.eks_cluster_version
 
+  #---------------------------------------
+  # Amazon EKS Managed Add-ons
+  #---------------------------------------
+  enable_amazon_eks_vpc_cni    = true
+  enable_amazon_eks_coredns    = true
+  enable_amazon_eks_kube_proxy = true
+
   enable_karpenter                    = true
   enable_aws_node_termination_handler = true
 
@@ -155,7 +162,6 @@ data "kubectl_path_documents" "karpenter_provisioners" {
   vars = {
     az           = join(",", slice(local.vpc.azs, 0, 1))
     cluster_name = local.name
-    vpc_name     = "${local.name}-vpc"
   }
 }
 
@@ -185,11 +191,13 @@ module "vpc" {
   public_subnet_tags = {
     "kubernetes.io/cluster/${local.name}" = "shared"
     "kubernetes.io/role/elb"              = 1
+    "${local.name}-vpc-subnet-group"      = "public"
   }
 
   private_subnet_tags = {
     "kubernetes.io/cluster/${local.name}" = "shared"
     "kubernetes.io/role/internal-elb"     = 1
+    "${local.name}-vpc-subnet-group"      = "private"
   }
 
   tags = local.tags
