@@ -12,7 +12,7 @@ aws emr-containers start-job-run \
 --region $AWS_REGION \
 --job-driver '{
     "sparkSubmitJobDriver": {
-        "entryPoint": "'${DEFAULT_BUCKET_NAME}'/scripts/src/threadsleep.py",
+        "entryPoint": "s3://'${DEFAULT_BUCKET_NAME}'/scripts/src/threadsleep.py",
         "sparkSubmitParameters": "--conf spark.executor.instances=15 --conf spark.executor.memory=1G --conf spark.executor.cores=1 --conf spark.driver.cores=1"
         }
     }' \
@@ -23,8 +23,8 @@ aws emr-containers start-job-run \
         "properties": {
           "spark.dynamicAllocation.enabled":"false",
           "spark.kubernetes.executor.deleteOnTermination": "true",
-          "spark.kubernetes.driver.podTemplateFile":"'${DEFAULT_BUCKET_NAME}'/scripts/config/driver-template.yaml", 
-          "spark.kubernetes.executor.podTemplateFile":"'${DEFAULT_BUCKET_NAME}'/scripts/config/executor-template.yaml"
+          "spark.kubernetes.driver.podTemplateFile":"s3://'${DEFAULT_BUCKET_NAME}'/scripts/config/driver-template.yaml", 
+          "spark.kubernetes.executor.podTemplateFile":"s3://'${DEFAULT_BUCKET_NAME}'/scripts/config/executor-template.yaml"
          }
       }
     ]
@@ -33,13 +33,13 @@ aws emr-containers start-job-run \
 ## with DRA
 aws emr-containers start-job-run \
 --virtual-cluster-id $VIRTUAL_CLUSTER_ID \
---name threadsleep-karpenter-wo-dra \
+--name threadsleep-karpenter-w-dra \
 --execution-role-arn $EMR_ROLE_ARN \
 --release-label emr-6.7.0-latest \
 --region $AWS_REGION \
 --job-driver '{
     "sparkSubmitJobDriver": {
-        "entryPoint": "'${DEFAULT_BUCKET_NAME}'/scripts/src/threadsleep.py",
+        "entryPoint": "s3://'${DEFAULT_BUCKET_NAME}'/scripts/src/threadsleep.py",
         "sparkSubmitParameters": "--conf spark.executor.instances=1 --conf spark.executor.memory=1G --conf spark.executor.cores=1 --conf spark.driver.cores=1"
         }
     }' \
@@ -55,8 +55,8 @@ aws emr-containers start-job-run \
           "spark.dynamicAllocation.initialExecutors":"1",
           "spark.dynamicAllocation.schedulerBacklogTimeout": "1s",
           "spark.dynamicAllocation.executorIdleTimeout": "5s",
-          "spark.kubernetes.driver.podTemplateFile":"'${DEFAULT_BUCKET_NAME}'/scripts/config/driver-template.yaml", 
-          "spark.kubernetes.executor.podTemplateFile":"'${DEFAULT_BUCKET_NAME}'/scripts/config/executor-template.yaml"
+          "spark.kubernetes.driver.podTemplateFile":"s3://'${DEFAULT_BUCKET_NAME}'/scripts/config/driver-template.yaml", 
+          "spark.kubernetes.executor.podTemplateFile":"s3://'${DEFAULT_BUCKET_NAME}'/scripts/config/executor-template.yaml"
          }
       }
     ]
