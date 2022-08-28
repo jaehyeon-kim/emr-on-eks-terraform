@@ -25,8 +25,8 @@ resource "aws_acm_certificate" "emr_studio" {
   certificate_body = tls_self_signed_cert.emr_studio.cert_pem
 }
 
-resource "aws_iam_policy" "emr_studio_s3" {
-  name = "analytics-job-execution-policy"
+resource "aws_iam_policy" "s3_eks_policy" {
+  name = "${local.name}-s3-eks-policy"
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -34,8 +34,6 @@ resource "aws_iam_policy" "emr_studio_s3" {
       {
         Effect = "Allow"
         Action = [
-          "s3:DeleteObject",
-          "s3:DeleteObjectVersion",
           "s3:GetObject",
           "s3:ListBucket",
           "s3:PutObject",
@@ -44,20 +42,7 @@ resource "aws_iam_policy" "emr_studio_s3" {
           aws_s3_bucket.default_bucket.arn,
           "${aws_s3_bucket.default_bucket.arn}/*"
         ]
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "logs:CreateLogGroup",
-          "logs:CreateLogStream",
-          "logs:DescribeLogGroups",
-          "logs:DescribeLogStreams",
-          "logs:PutLogEvents",
-        ]
-        Resource = [
-          "arn:aws:logs:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:log-group:*"
-        ]
-      },
+      }
     ]
   })
 }
