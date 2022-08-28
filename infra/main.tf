@@ -103,6 +103,7 @@ module "eks_blueprints_kubernetes_addons" {
   enable_cluster_autoscaler           = true
   enable_karpenter                    = true
   enable_aws_node_termination_handler = true
+  enable_aws_load_balancer_controller = true
 
   tags = local.tags
 }

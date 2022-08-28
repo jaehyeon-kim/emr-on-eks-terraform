@@ -64,3 +64,9 @@ output "emr_on_eks_role_arn" {
   description = "IAM execution role arn for EMR on EKS"
   value       = module.eks_blueprints.emr_on_eks_role_arn
 }
+
+# EMR Studio
+output "aws_acm_certificate_emr_studio" {
+  description = "ACM certificate ARN of EMR studio"
+  value       = aws_acm_certificate.emr_studio.arn
+}
