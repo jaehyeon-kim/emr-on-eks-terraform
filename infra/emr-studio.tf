@@ -52,7 +52,7 @@ resource "aws_security_group_rule" "emr_studio_engine_inbound" {
   source_security_group_id = aws_security_group.emr_studio_workspace.id
 }
 
-resource "aws_ec2_tag" "emr_studio_engine_inbound_tag" {
+resource "aws_ec2_tag" "emr_studio_engine_inbound" {
   resource_id = aws_security_group_rule.emr_studio_engine_inbound.id
   key         = "for-use-with-amazon-emr-managed-policies"
   value       = "true"
