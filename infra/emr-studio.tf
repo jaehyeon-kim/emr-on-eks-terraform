@@ -400,7 +400,7 @@ resource "aws_emr_studio" "demo" {
 resource "aws_emr_studio_session_mapping" "demo" {
   studio_id          = aws_emr_studio.demo.id
   identity_type      = "USER"
-  identity_id        = "example"
+  identity_name      = "jaehyeon.kim@cevo.com.au"
   session_policy_arn = aws_iam_policy.emr_studio_usr_policy.arn
 
   depends_on = [
