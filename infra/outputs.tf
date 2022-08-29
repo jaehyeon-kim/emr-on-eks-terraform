@@ -64,3 +64,39 @@ output "emr_on_eks_role_arn" {
   description = "IAM execution role arn for EMR on EKS"
   value       = module.eks_blueprints.emr_on_eks_role_arn
 }
+
+# EMR Studio
+output "emr_studio_arn" {
+  description = "ARN of EMR studio"
+  value       = aws_emr_studio.demo.arn
+}
+
+output "emr_studio_url" {
+  description = "URL of EMR studio"
+  value       = aws_emr_studio.demo.url
+}
+
+output "emr_studio_workspace_sg_id" {
+  description = "Security group ID of EMR studio workspace"
+  value       = aws_security_group.emr_studio_workspace.id
+}
+
+output "emr_studio_engine_sg_id" {
+  description = "Security group ID of EMR studio engine"
+  value       = aws_security_group.emr_studio_engine.id
+}
+
+output "emr_studio_svc_role_arn" {
+  description = "ARN of EMR studio service role"
+  value       = aws_iam_role.emr_studio_svc_role.arn
+}
+
+output "emr_studio_usr_role_arn" {
+  description = "ARN of EMR studio user role"
+  value       = aws_iam_role.emr_studio_usr_role.arn
+}
+
+output "aws_acm_certificate_emr_studio" {
+  description = "ACM certificate ARN of EMR studio"
+  value       = aws_acm_certificate.emr_studio.arn
+}
