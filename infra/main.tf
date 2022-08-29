@@ -53,6 +53,7 @@ module "eks_blueprints" {
       update_config = [{
         max_unavailable_percentage = 30
       }]
+      additional_iam_policies = [aws_iam_policy.s3_eks_policy]
     }
   }
 
@@ -62,7 +63,7 @@ module "eks_blueprints" {
     analytics = {
       namespace               = "analytics"
       job_execution_role      = "analytics-job-execution-role"
-      additional_iam_policies = [aws_iam_policy.emr_on_eks.arn]
+      additional_iam_policies = [aws_iam_policy.emr_on_eks.arn, aws_iam_policy.emr_studio_network]
     }
   }
 
@@ -210,6 +211,13 @@ resource "aws_iam_policy" "emr_on_eks" {
         Resource = [
           "arn:aws:logs:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:log-group:*"
         ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "glue:*",
+        ]
+        Resource = "*"
       },
     ]
   })
