@@ -53,7 +53,7 @@ module "eks_blueprints" {
       update_config = [{
         max_unavailable_percentage = 30
       }]
-      additional_iam_policies = [aws_iam_policy.s3_eks_policy]
+      additional_iam_policies = [aws_iam_policy.s3_eks_policy.arn]
     }
   }
 
@@ -63,7 +63,7 @@ module "eks_blueprints" {
     analytics = {
       namespace               = "analytics"
       job_execution_role      = "analytics-job-execution-role"
-      additional_iam_policies = [aws_iam_policy.emr_on_eks.arn, aws_iam_policy.emr_studio_network]
+      additional_iam_policies = [aws_iam_policy.emr_on_eks.arn, aws_iam_policy.emr_studio_network.arn]
     }
   }
 

@@ -4,12 +4,12 @@ resource "aws_security_group" "emr_studio_workspace" {
   vpc_id = module.vpc.vpc_id
 
   egress {
-    description      = "required for emr studio workspace and cluster communication"
-    from_port        = 18888
-    to_port          = 18888
-    protocol         = "tcp"
-    cidr_blocks      = [aws_vpc.main.cidr_block]
-    ipv6_cidr_blocks = [aws_vpc.main.ipv6_cidr_block]
+    description = "required for emr studio workspace and cluster communication"
+    from_port   = 18888
+    to_port     = 18888
+    protocol    = "tcp"
+    cidr_blocks = [module.vpc.vpc_cidr_block]
+    # ipv6_cidr_blocks = [module.vpc.vpc_ipv6_cidr_block]
   }
 
   egress {
@@ -50,12 +50,6 @@ resource "aws_security_group_rule" "emr_studio_engine_inbound" {
   from_port                = 18888
   to_port                  = 18888
   source_security_group_id = aws_security_group.emr_studio_workspace.id
-}
-
-resource "aws_ec2_tag" "emr_studio_engine_inbound" {
-  resource_id = aws_security_group_rule.emr_studio_engine_inbound.id
-  key         = "for-use-with-amazon-emr-managed-policies"
-  value       = "true"
 }
 
 resource "aws_iam_role" "emr_studio_svc_role" {
@@ -397,17 +391,6 @@ resource "aws_emr_studio" "demo" {
   tags = local.tags
 }
 
-resource "aws_emr_studio_session_mapping" "demo" {
-  studio_id          = aws_emr_studio.demo.id
-  identity_type      = "USER"
-  identity_name      = "jaehyeon.kim@cevo.com.au"
-  session_policy_arn = aws_iam_policy.emr_studio_usr_policy.arn
-
-  depends_on = [
-    aws_emr_studio.demo
-  ]
-}
-
 #### resources to set up EMR on EKS for EMR studio
 # acm certificate
 resource "tls_private_key" "emr_studio" {
@@ -415,7 +398,6 @@ resource "tls_private_key" "emr_studio" {
 }
 
 resource "tls_self_signed_cert" "emr_studio" {
-  key_algorithm   = "RSA"
   private_key_pem = tls_private_key.emr_studio.private_key_pem
 
   subject {
